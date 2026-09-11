@@ -1,6 +1,7 @@
 package com.gamebasic.common.exception;
 
 import com.gamebasic.common.dto.ErrorResponse;
+import com.gamebasic.ranking.exception.RankingSourceException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -15,6 +16,12 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(RankingSourceException.class)
+    public ResponseEntity<ErrorResponse> handleRankingSource(
+            RankingSourceException e, HttpServletRequest request) {
+        return respond(HttpStatus.BAD_GATEWAY, e.getMessage(), request);
+    }
 
     // TODO (Lv 10): GameNotFoundException(404)과 GameFinishedException(409)을 처리하는 핸들러를 추가하세요.
     @ExceptionHandler(GameNotFoundException.class)
