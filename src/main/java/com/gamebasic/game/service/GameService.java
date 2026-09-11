@@ -4,6 +4,7 @@ import com.gamebasic.game.dto.*;
 import com.gamebasic.game.entity.Game;
 import com.gamebasic.game.repository.GameRepository;
 import com.gamebasic.runcard.dto.CardResponse;
+import com.gamebasic.runcard.dto.DeckCount;
 import com.gamebasic.runcard.dto.RunCardRequest;
 import com.gamebasic.runcard.entity.RunCard;
 import com.gamebasic.runcard.repository.RunCardRepository;
@@ -17,7 +18,9 @@ import com.gamebasic.common.exception.GameNotFoundException;
 import com.gamebasic.common.exception.GameFinishedException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -42,7 +45,9 @@ public class GameService {
             game.getCurrentFloor(),
             game.getPhase(),
             game.getStatus(),
-            deck
+            deck,
+            game.getCreatedAt(),
+            game.getUpdatedAt()
         );
     }
 
@@ -88,7 +93,9 @@ public class GameService {
             game.getCurrentFloor(),
             game.getPhase(),
             game.getStatus(),
-            deck
+            deck,
+            game.getCreatedAt(),
+            game.getUpdatedAt()
         );
     }
 
@@ -96,17 +103,33 @@ public class GameService {
      @Transactional(readOnly = true)
      public List<GameSummaryResponse> getGames() {
         List<Game> games = gameRepository.findAllByOrderByIdDesc();
+        if (games.isEmpty()) {
+            return List.of();
+        }
+
+        List<DeckCount> counts = runCardRepository.countByGames(games);
+
+        Map<Long, Long> deckSizeByGameId = new HashMap<>();
+        for (DeckCount count : counts) {
+            deckSizeByGameId.put(count.getGameId(), count.getDeckSize());
+        }
+
         List<GameSummaryResponse> gamesResponse = new ArrayList<>();
+
         for (Game game : games) {
-            GameSummaryResponse gameSummaryResponse = new GameSummaryResponse(
+            Long deckSize = deckSizeByGameId.getOrDefault(game.getId(), 0L);
+
+            gamesResponse.add(new GameSummaryResponse(
                     game.getId(),
                     game.getPlayerName(),
-                    game.getCurrentFloor(),
                     game.getCurrentHp(),
+                    game.getCurrentFloor(),
                     game.getPhase(),
-                    game.getStatus()
-            );
-            gamesResponse.add(gameSummaryResponse);
+                    game.getStatus(),
+                    deckSize,
+                    game.getCreatedAt(),
+                    game.getUpdatedAt()
+            ));
         }
         return gamesResponse;
      }
@@ -138,7 +161,9 @@ public class GameService {
                 game.getCurrentFloor(),
                 game.getPhase(),
                 game.getStatus(),
-                deck
+                deck,
+                game.getCreatedAt(),
+                game.getUpdatedAt()
         );
      }
 
